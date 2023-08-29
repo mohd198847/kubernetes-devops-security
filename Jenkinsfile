@@ -44,7 +44,7 @@ pipeline {
        }
          post { 
    pitmutation mutationStatsFile: '**/target/pit-reports/**/mutations.xml'
-           )
+         }
      }
 }
 }
