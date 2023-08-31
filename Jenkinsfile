@@ -39,6 +39,7 @@ stage('SonarQube - SAST') {
 }
               stage("Quality Gate") {
             steps {
+              sleep(60)
               timeout(time: 1, unit: 'HOURS') {
                 waitForQualityGate abortPipeline: true
               }
