@@ -1,90 +1,106 @@
-pipeline {
-  agent any
+package main
 
-  stages {
-      stage('Build Artifact') {
-            steps {
-              sh "mvn clean package -DskipTests=true"
-              archive 'target/*.jar'
-            }
-        }   
-     stage('Unit Test') {
-            steps {
-              sh "mvn test"
-            }
-	}	
+suspicious_env_keys = [
+    "passwd",
+    "password",
+    "secret",
+    "key",
+    "access",
+    "api_key",
+    "apikey",
+    "token",
+]
 
-     stage('Mutation Tests - PIT') {
-       steps {
-        sh "mvn org.pitest:pitest-maven:mutationCoverage"
-       }
-	     post { 
-         always { 
+pkg_update_commands = [
+    "apk upgrade",
+    "apt-get upgrade",
+    "dist-upgrade",
+]
 
-	   pitmutation mutationStatsFile: '**/target/pit-reports/**/mutations.xml'
+image_tag_list = [
+    "latest",
+    "LATEST",
+]
 
-        }   
-  }
-  	}
-     stage('SonarQube - SAST') {
-       steps {
-         withSonarQubeEnv('SonarQube') {
-          sh "mvn clean verify sonar:sonar  -Dsonar.projectKey=numeric-application -Dsonar.projectName='numeric-application' -Dsonar.host.url=http://devsecops-kube.eastus.cloudapp.azure.com:9000"
-         }
-       }
-	}
-    stage("Quality Gate") {
-	steps {
-        timeout(time: 1, unit: 'MINUTES') {
-                waitForQualityGate abortPipeline: true
-              }
-            }
-	}
-
-    	 stage('Vulnerability Scan - Docker') {
-     		 steps {
-             parallel(
-        	"Dependency Scan": {
-       		sh "mvn dependency-check:check"
-			},
-		"Trivy Scan":{
-		sh "bash trivy-docker-image-scan.sh"
-		},
-		"OPA Conftest":{
-		sh 'sudo docker run --rm -v $(pwd):/project openpolicyagent/conftest test --policy dockerfile-security.rego Dockerfile'
-		}   	
-     			)
-	 }
-	 }
-    
-    stage('Docker Build') {
-            steps {
-               withDockerRegistry([ credentialsId: "dockerhub", url: "" ]) {
-              sh 'printenv'
-              sh 'sudo docker build -t saeed1988/numeric-app:""$GIT_COMMIT"" .'
-              
-              sh 'sudo docker push  saeed1988/numeric-app:""$GIT_COMMIT""'
-            }
-        }  
- 	 }
-    stage('K8s Deployment') {
-            steps {
-               withKubeConfig([ credentialsId: "kubeconfig" ]) {
-              sh "sed -i 's#replace#saeed1988/numeric-app:${GIT_COMMIT}#g' k8s_deployment_service.yaml"
-              sh 'kubectl apply -f k8s_deployment_service.yaml'
-            
-            }
-        }  
-  	}
-	}  
-  
-       post { 
-         always { 
-           junit 'target/surefire-reports/*.xml'
-           jacoco execPattern: 'target/jacoco.exec'
-	 //  pitmutation mutationStatsFile: '**/target/pit-reports/**/mutations.xml' //
-	   dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
-        }   
-  }
-	
+# Looking for suspicious environment variable settings
+deny[msg] {    
+    dockerenvs := [val | input[i].Cmd == "env"; val := input[i].Value]
+    dockerenv := dockerenvs[_]
+    envvar := dockerenv[_]
+    lower(envvar) == suspicious_env_keys[_]
+    msg = sprintf("Potential secret in ENV found: %s", [envvar])
 }
+
+# Looking for suspicious environment variable settings
+deny[msg] {
+    dockerenvs := [val | input[i].Cmd == "env"; val := input[i].Value]
+    dockerenv := dockerenvs[_]
+    envvar := dockerenv[_]
+    startswith(lower(envvar), suspicious_env_keys[_])
+    msg = sprintf("Potential secret in ENV found: %s", [envvar])
+}
+
+# Looking for suspicious environment variable settings
+deny[msg] {
+    dockerenvs := [val | input[i].Cmd == "env"; val := input[i].Value]
+    dockerenv := dockerenvs[_]
+    envvar := dockerenv[_]
+    endswith(lower(envvar), suspicious_env_keys[_])
+    msg = sprintf("Potential secret in ENV found: %s", [envvar])
+}
+
+# Looking for suspicious environment variable settings
+deny[msg] {
+    dockerenvs := [val | input[i].Cmd == "env"; val := input[i].Value]
+    dockerenv := dockerenvs[_]
+    envvar := dockerenv[_]
+    parts := regex.split("[ :=_-]", envvar)
+    part := parts[_]
+    lower(part) == suspicious_env_keys[_]
+    msg = sprintf("Potential secret in ENV found: %s", [envvar])
+}
+
+# Looking for latest docker image used
+warn[msg] {
+    input[i].Cmd == "from"
+    val := split(input[i].Value[0], ":")
+    count(val) == 1
+    msg = sprintf("Do not use latest tag with image: %s", [val])
+}
+
+# Looking for latest docker image used
+warn[msg] {
+    input[i].Cmd == "from"
+    val := split(input[i].Value[0], ":")
+    contains(val[1], image_tag_list[_])
+    msg = sprintf("Do not use latest tag with image: %s", [input[i].Value])
+}
+
+# Looking for apk upgrade command used in Dockerfile
+deny[msg] {
+    input[i].Cmd == "run"
+    val := concat(" ", input[i].Value)
+    contains(val, pkg_update_commands[_])
+    msg = sprintf("Do not use upgrade commands: %s", [val])
+}
+
+# Looking for ADD command instead using COPY command
+deny[msg] {
+    input[i].Cmd == "add"
+    val := concat(" ", input[i].Value)
+    msg = sprintf("Use COPY instead of ADD: %s", [val])
+}
+
+# sudo usage
+deny[msg] {
+    input[i].Cmd == "run"
+    val := concat(" ", input[i].Value)
+    contains(lower(val), "sudo")
+    msg = sprintf("Avoid using 'sudo' command: %s", [val])
+}
+
+# # No Healthcheck usage
+# deny[msg] {
+#     input[i].Cmd == "healthcheck"
+#     msg := "no healthcheck"
+# }
