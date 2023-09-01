@@ -63,7 +63,7 @@ pipeline {
               sh 'printenv'
               sh 'sudo docker build -t saeed1988/numeric-app:""$GIT_COMMIT"" .'
               
-              sh 'sudo docker push  saeed1988/numeric-app:""$GIT_COMMIT""'
+              sh 'docker push  saeed1988/numeric-app:""$GIT_COMMIT""'
             }
         }  
  	 }
