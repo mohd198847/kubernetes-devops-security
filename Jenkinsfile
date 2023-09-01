@@ -59,6 +59,7 @@ pipeline {
     
     stage('Docker Build') {
             steps {
+	      sh 'sudo docker logout'
                withDockerRegistry([ credentialsId: "dockerhub", url: "" ]) {
               sh 'printenv'
               sh 'sudo docker build -t saeed1988/numeric-app:""$GIT_COMMIT"" .'
