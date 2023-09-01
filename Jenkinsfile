@@ -45,7 +45,33 @@ stage('SonarQube - SAST') {
               }
             }
               }
-      stage('Docker Build') {
+
+    	 stage('Vulnerability Scan - Docker') {
+      steps {
+         		sh "mvn dependency-check:check"
+			}
+    post {
+      always {
+        dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
+      }
+    }
+       }
+
+
+    
+	// 		"Trivy Scan":{
+	// 			sh "bash trivy-docker-image-scan.sh"
+	// 		},
+	// 		"OPA Conftest":{
+	// 			sh 'docker run --rm -v $(pwd):/project openpolicyagent/conftest test --policy opa-docker-security.rego Dockerfile'
+	// 		}   	
+ //      	)
+ //      }
+ //    }
+    
+    
+    
+    stage('Docker Build') {
             steps {
                withDockerRegistry([ credentialsId: "dockerhub", url: "" ]) {
               sh 'printenv'
