@@ -8,45 +8,37 @@ pipeline {
               archive 'target/*.jar'
             }
         }   
-    stage('Unit Test') {
+     stage('Unit Test') {
             steps {
               sh "mvn test"
             }
-
-}
+	}	
 
      stage('Mutation Tests - PIT') {
        steps {
         sh "mvn org.pitest:pitest-maven:mutationCoverage"
        }
-
-  
- 
-   }
-stage('SonarQube - SAST') {
-      steps {
-        withSonarQubeEnv('SonarQube') {
+  	}
+     stage('SonarQube - SAST') {
+       steps {
+         withSonarQubeEnv('SonarQube') {
           sh "mvn clean verify sonar:sonar  -Dsonar.projectKey=numeric-application -Dsonar.projectName='numeric-application' -Dsonar.host.url=http://devsecops-kube.eastus.cloudapp.azure.com:9000"
          }
-  }
-}
-              stage("Quality Gate") {
-            steps {
-              sleep(60)
-              timeout(time: 1, unit: 'HOURS') {
+       }
+	}
+    stage("Quality Gate") {
+	steps {
+        timeout(time: 1, unit: 'HOURS') {
                 waitForQualityGate abortPipeline: true
               }
             }
-              }
+	}
 
     	 stage('Vulnerability Scan - Docker') {
-      steps {
+     		 steps {
          		sh "mvn dependency-check:check"
 			}
-
-     
-  
-       }
+     	}
 
 
     
@@ -71,7 +63,7 @@ stage('SonarQube - SAST') {
               sh 'docker push  saeed1988/numeric-app:""$GIT_COMMIT""'
             }
         }  
-  }
+ 	 }
     stage('K8s Deployment') {
             steps {
                withKubeConfig([ credentialsId: "kubeconfig" ]) {
@@ -80,15 +72,15 @@ stage('SonarQube - SAST') {
             
             }
         }  
-  }
-  }  
+  	}
+	}  
   
        post { 
-       always { 
-       junit 'target/surefire-reports/*.xml'
-        jacoco execPattern: 'target/jacoco.exec'
-	pitmutation mutationStatsFile: '**/target/pit-reports/**/mutations.xml'
-	dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
+         always { 
+           junit 'target/surefire-reports/*.xml'
+           jacoco execPattern: 'target/jacoco.exec'
+	   pitmutation mutationStatsFile: '**/target/pit-reports/**/mutations.xml'
+	   dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
         }   
   }
 	
