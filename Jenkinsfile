@@ -52,7 +52,6 @@ pipeline {
 		},
 		"OPA Conftest":{
 		sh 'sudo docker run --rm -v $(pwd):/project openpolicyagent/conftest test --policy docker.rego Dockerfile'
-	        sh 'sudo docker logout'
 		}   	
      			)
 	 }
@@ -61,7 +60,7 @@ pipeline {
     stage('Docker Build') {
             steps {
 	      
-               withDockerRegistry([ credentialsId: "dockerhub", url: "https://index.docker.io/v1/" ]) {
+               withDockerRegistry([ credentialsId: "dockerhub", url: "" ]) {
               sh 'printenv'
               sh 'sudo docker build -t saeed1988/numeric-app1:""$GIT_COMMIT"" .'
               
