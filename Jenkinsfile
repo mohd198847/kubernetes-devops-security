@@ -59,11 +59,11 @@ pipeline {
     
     stage('Docker Build') {
             steps {
-              withDockerRegistry([ credentialsId: "dockerlogin"]) {
+               withDockerRegistry([credentialsId: "dockerlogin", url: ""]) {
               sh 'printenv'
-              sh 'sudo docker build -t saeed1988/numeric-app1:""$GIT_COMMIT"" .'
+              sh 'sudo docker build -t saeed1988/numeric-app:""$GIT_COMMIT"" .'
               
-              sh 'sudo docker push  saeed1988/numeric-app1:""$GIT_COMMIT""'
+              sh 'sudo docker push  saeed1988/numeric-app:""$GIT_COMMIT""'
             }
         }  
  	 }
