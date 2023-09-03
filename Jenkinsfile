@@ -147,7 +147,7 @@ pipeline {
 
      stage('Testing Slack - Error Stage') {
       steps {
-          sh 'exit 0'
+          sh 'exit 1'
       }
     }
  
