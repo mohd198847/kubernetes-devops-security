@@ -97,7 +97,7 @@ pipeline {
  //          steps {
  //             withKubeConfig([credentialsId: "kubeconfig"]) {
  //            sh "sed -i 's#replace#saeed1988/numeric-app:${GIT_COMMIT}#g' k8s_deployment_service.yaml"
- //            sh 'kubectl apply -f k8s_deployment_service.yaml'
+ //            sh 'kubectl apply -f k8s_deployment_service1.yaml'
  //          
  //          }
  //      }  
@@ -145,11 +145,11 @@ pipeline {
  //      }
  //    }
 
-     stage('Testing Slack - Error Stage') {
-      steps {
-          sh 'exit 1'
-      }
-    }
+//     stage('Testing Slack - Error Stage') {
+//      steps {
+//          sh 'exit 0'
+//      }
+//    }
  
   }
 	post { 
