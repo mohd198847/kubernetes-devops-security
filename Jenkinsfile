@@ -1,3 +1,5 @@
+@Library('slack')_
+
 pipeline {
   agent any
   environment {
@@ -149,6 +151,7 @@ pipeline {
            jacoco execPattern: 'target/jacoco.exec'
 	 //  pitmutation mutationStatsFile: '**/target/pit-reports/**/mutations.xml' //
 	   dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
+		 sendNotification currentBuild.result
 	 //  publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: false, reportDir: 'owasp-zap-report', reportFiles: 'zap_report.html', reportName: 'OWASP ZAP HTML REPORT', reportTitles: 'OWASP ZAP HTML REPORT', useWrapperFileDirectly: true])
         }   
   }
