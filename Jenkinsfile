@@ -25,7 +25,7 @@ pipeline {
 
      stage('Mutation Tests - PIT') {
        steps {
-        sh "mvn org.pitest:pitest-maven:mutationCoverage"
+        sh "mvn org.pitest:pitest-maven:mutationCoverage1"
        }
 	     post { 
          always { 
@@ -109,7 +109,7 @@ pipeline {
      parallel(
        "Deployment": {
          withKubeConfig([credentialsId: 'kubeconfig']) {
-           sh "bash k8s-deployment1.sh"
+           sh "bash k8s-deployment.sh"
          }
        },
        "Rollout Status": {
