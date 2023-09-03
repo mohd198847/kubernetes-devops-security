@@ -19,13 +19,13 @@ pipeline {
         }   
      stage('Unit Test') {
             steps {
-              sh "mvn test"
+              sh "mvn t111est"
             }
 	}	
 
      stage('Mutation Tests - PIT') {
        steps {
-        sh "mvn org.pitest:pitest-maven:mutationCoverage1"
+        sh "mvn org.pitest:pitest-maven:mutationCoverage"
        }
 	     post { 
          always { 
