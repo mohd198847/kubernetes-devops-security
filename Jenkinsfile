@@ -10,6 +10,7 @@ pipeline {
     applicationURL="http://devsecops-kube.eastus.cloudapp.azure.com"
     applicationURI="/increment/99"
   }
+	
   stages {
       stage('Build Artifact') {
             steps {
@@ -150,6 +151,13 @@ pipeline {
 //          sh 'exit 0'
 //      }
 //    }
+	  stage('Prompte to PROD?') {
+       steps {
+         timeout(time: 2, unit: 'DAYS') {
+           input 'Do you want to Approve the Deployment to Production Environment/Namespace?'
+     }
+       }
+	  }
       stage('K8S Deployment - PROD') {
       steps {
         parallel(
